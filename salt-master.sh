@@ -17,7 +17,7 @@ EOF
 # export http{,s}_proxy=http://10.94.97.161:8080/
 wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
 apt-get update
-apt-get install -y salt-master salt-minion salt-api salt-ssh
+apt-get install -y salt-master salt-minion salt-api
 # salt-call --local tls.create_self_signed_cert
 mkdir -p /etc/pki/api/certs
 openssl genrsa -out /etc/pki/api/certs/server.key 4096
