@@ -21,7 +21,7 @@ apt-get install -y salt-master salt-minion salt-api salt-ssh
 # salt-call --local tls.create_self_signed_cert
 mkdir -p /etc/pki/api/certs
 openssl genrsa -out /etc/pki/api/certs/server.key 4096
-openssl req -new -x509 -days 36500 -key /etc/pki/api/certs/server.key -out /etc/pki/api/certs/server.crt -subj "/C=CN/ST=beijing/L=shuzishangu/O=didichuxing/OU=Salt Api Root CA"
+openssl req -new -x509 -days 36500 -key /etc/pki/api/certs/server.key -out /etc/pki/api/certs/server.crt -subj "/C=CN/ST=beijing/L=some location/O=some company/OU=Salt Api Root CA"
 
 cat > /etc/salt/master.d/api.conf <<EOF
 rest_tornado:
