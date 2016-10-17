@@ -18,16 +18,19 @@ EOF
 wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
 apt-get update
 apt-get install -y salt-master salt-minion salt-api salt-ssh
-mkdir -p /etc/pki/tls/certs
-openssl genrsa -out /etc/pki/tls/certs/localhost.key 4096
-openssl req -new -x509 -days 36500 -key /etc/pki/tls/certs/localhost.key -out /etc/pki/tls/certs/localhost.crt \
-        -subj "/C=CN/ST=beijing/L=shuzishangu/O=didichuxing/OU=Salt Api Root CA"
+# salt-call --local tls.create_self_signed_cert
+mkdir -p /etc/pki/api/certs
+openssl genrsa -out /etc/pki/api/certs/server.key 4096
+openssl req -new -x509 -days 36500 -key /etc/pki/api/certs/server.key -out /etc/pki/api/certs/server.crt -subj "/C=CN/ST=beijing/L=shuzishangu/O=didichuxing/OU=Salt Api Root CA"
+
 cat > /etc/salt/master.d/api.conf <<EOF
-rest_cherrypy:
+rest_tornado:
   port: 8000
-  ssl_crt: /etc/pki/tls/certs/localhost.crt
-  ssl_key: /etc/pki/tls/certs/localhost.key
+  ssl_crt: /etc/pki/api/certs/server.crt
+  ssl_key: /etc/pki/api/certs/server.key
   debug: True
+  disable_ssl: False
+  websockets: True
 EOF
 cat > /etc/salt/master.d/eauth.conf <<EOF
 external_auth:
@@ -38,7 +41,8 @@ external_auth:
       - '@runner'
 EOF
 
-useradd -M -s /sbin/nologin -p salt salt
+useradd -M -s /sbin/nologin salt 2> /dev/null
+echo salt:salt | chpasswd
 cat > /etc/salt/minion.d/minion.conf <<EOF
 master: 192.168.88.101
 EOF
