@@ -5,120 +5,128 @@
 package salt
 
 import (
-	"encoding/json"
-	"fmt"
+	"crypto/tls"
+	"errors"
+	"net/http"
+	"time"
+
+	"github.com/xuguruogu/gorest"
 )
 
 // Client ...
-type Client struct {
-	Connector *Connector
+type Client interface {
+	Authenticate() error
+	RunCmd(target, fun string, arg []string, result interface{}) error
+	Jobs() (map[string]*Job, error)
+	Job(id string) (*Job, error)
+	Execute(target, fun string, arg []string) (id string, er error)
+	Minions() (map[string]*Minion, error)
+	Minion(id string) (*Minion, error)
+}
+
+// ClientImpl ...
+type ClientImpl struct {
+	Addr          string
+	Username      string
+	Password      string
+	Eauth         string
+	AuthToken     *AuthToken
+	SSLSkipVerify bool
 }
 
 // NewClient ...
-func NewClient(config Config) (*Client, error) {
-	c := Client{}
-	c.Connector = NewConnector(config)
-	err := c.Connector.Authenticate()
-
-	return &c, err
+func NewClient(addr, username, password string, SSLSkipVerify bool, eauth ...string) Client {
+	return &ClientImpl{
+		Addr:     addr,
+		Username: username,
+		Password: password,
+		Eauth: func() string {
+			if len(eauth) == 0 {
+				return "pam"
+			}
+			return eauth[0]
+		}(),
+		SSLSkipVerify: SSLSkipVerify,
+	}
 }
 
-// Minions ...
-func (c *Client) Minions() (map[string]Minion, error) {
-	m := MinionsResponse{}
-
-	resp, err := c.Connector.Get("/minions")
-	if err != nil {
-		return m.Minions[0], err
-	}
-
-	data, err := parseResponse(resp)
-	if err != nil {
-		return m.Minions[0], err
-	}
-
-	err = json.Unmarshal(*data, &m)
-
-	return m.Minions[0], err
+// RestClient ...
+func (c *ClientImpl) RestClient() *gorest.RestClient {
+	return gorest.New().Base("https://" + c.Addr).Client(&http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: c.SSLSkipVerify,
+		},
+	}})
 }
 
-// Minion ...
-func (c *Client) Minion(id string) (Minion, error) {
-	var m Minion
-
-	uri := fmt.Sprintf("/minions/%s", id)
-	resp, err := c.Connector.Get(uri)
-	if err != nil {
-		return m, err
+// RestClientWithToken ...
+func (c *ClientImpl) RestClientWithToken() *gorest.RestClient {
+	if c.AuthToken == nil || int64(c.AuthToken.Expire) < time.Now().Unix() {
+		c.Authenticate()
 	}
 
-	data, err := parseResponse(resp)
-	fmt.Println(string(*data))
-	if err != nil {
-		return m, err
+	if c.AuthToken == nil {
+		return c.RestClient()
 	}
 
-	err = json.Unmarshal(*data, &m)
-
-	return m, err
+	return c.RestClient().Set("X-Auth-Token", c.AuthToken.Token)
 }
 
-// Jobs ...
-func (c *Client) Jobs() ([]map[string]Job, error) {
-	jr := JobsResponse{}
-
-	resp, err := c.Connector.Get("/jobs")
-	if err != nil {
-		return jr.Jobs, err
-	}
-
-	data, err := parseResponse(resp)
-	if err != nil {
-		return jr.Jobs, err
-	}
-
-	err = json.Unmarshal(*data, &jr)
-
-	return jr.Jobs, err
+// RestClientWithPassWord ...
+func (c *ClientImpl) RestClientWithPassWord() *gorest.RestClient {
+	return c.RestClient().ParamStruct(struct {
+		Username string `json:"username,omitempty"`
+		Password string `json:"password,omitempty"`
+		Eauth    string `json:"eauth,omitempty"`
+	}{
+		Username: c.Username,
+		Password: c.Password,
+		Eauth:    c.Eauth,
+	})
 }
 
-// Job ...
-func (c *Client) Job(id string) (Job, error) {
-	j := JobResponse{}
-
-	uri := fmt.Sprintf("/jobs/%s", id)
-	resp, err := c.Connector.Get(uri)
-	if err != nil {
-		return Job{}, err
-	}
-
-	data, err := parseResponse(resp)
-	if err != nil {
-		return Job{}, err
-	}
-
-	err = json.Unmarshal(*data, &j)
-
-	return j.Job[0], err
+// AuthResponse ...
+type AuthResponse struct {
+	Tokens []*AuthToken `json:"return"`
 }
 
-// Execute ...
-func (c *Client) Execute(function, command, target, targetType string) (string, error) {
-	er := ExecutionResponse{}
+// AuthToken ...
+type AuthToken struct {
+	Token  string   `json:"token"`
+	Expire float32  `json:"expire"`
+	Start  float32  `json:"start"`
+	User   string   `json:"user"`
+	Eauth  string   `json:"eauth"`
+	Perms  []string `json:"perms"`
+}
 
-	req := fmt.Sprintf(`{"fun": "%s", "arg": "%s", "tgt": "%s", "expr_form": "%s"}`, function, command, target, targetType)
+// Authenticate ...
+func (c *ClientImpl) Authenticate() error {
+	response := AuthResponse{}
+	err := c.RestClientWithPassWord().Post("/login").Receive(&response)
 
-	resp, err := c.Connector.Post("/minions", []byte(req))
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	data, err := parseResponse(resp)
-	if err != nil {
-		return "", err
+	if len(response.Tokens) == 0 {
+		return errors.New("response token array length is 0, this should never happen")
 	}
+	c.AuthToken = response.Tokens[0]
+	return nil
+}
 
-	err = json.Unmarshal(*data, &er)
-
-	return er.Job[0].ID, err
+// RunCmd ...
+func (c *ClientImpl) RunCmd(target, fun string, arg []string, result interface{}) error {
+	return c.RestClientWithPassWord().ParamStruct(struct {
+		Client string   `json:"client,omitempty"`
+		Fun    string   `json:"fun,omitempty"`
+		Arg    []string `json:"arg,omitempty"`
+		Target string   `json:"tgt,omitempty"`
+	}{
+		Client: "local",
+		Target: target,
+		Fun:    fun,
+		Arg:    arg,
+	}).Post("/run").Receive(result)
 }

@@ -2,6 +2,9 @@
 
 modified version of [go-rest](https://github.com/r3labs/go-salt)
 
+detailed api reference see [rest_cherrypy](https://docs.saltstack.com/en/latest/ref/netapi/all/salt.netapi.rest_cherrypy.html)
+
+
 # vagrant usage
 
 ```
