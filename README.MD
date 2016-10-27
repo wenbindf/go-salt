@@ -8,6 +8,7 @@ detailed api reference see [rest_cherrypy](https://docs.saltstack.com/en/latest/
 
 - retry authenticate after receive 401
 - easy access to urls /jobs, /minions and /run
+- easy to parse run result
 
 ## usage
 
