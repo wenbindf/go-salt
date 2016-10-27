@@ -18,7 +18,7 @@ EOF
 # export http{,s}_proxy=http://10.94.97.161:8080/
 wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | apt-key add -
 apt-get update
-apt-get install -y salt-minion
+apt-get install -y python python-pip salt-minion
 cat > /etc/salt/minion.d/minion.conf <<EOF
 master: 192.168.88.101
 EOF

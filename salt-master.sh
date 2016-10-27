@@ -14,23 +14,25 @@ deb-src http://cn.archive.ubuntu.com/ubuntu/ xenial-backports main restricted un
 
 deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest xenial main
 EOF
- export http{,s}_proxy=http://10.94.97.161:8080/
+# export http{,s}_proxy=http://10.94.97.161:8080/
 wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
 apt-get update
-apt-get install -y salt-master salt-minion salt-api
+apt-get install -y python python-pip salt-master salt-minion salt-api python-cherrypy3
+# pip install --upgrade pip cherrypy
 # salt-call --local tls.create_self_signed_cert
 mkdir -p /etc/pki/api/certs
 openssl genrsa -out /etc/pki/api/certs/server.key 4096
 openssl req -new -x509 -days 36500 -key /etc/pki/api/certs/server.key -out /etc/pki/api/certs/server.crt -subj "/CN=api.salt.com"
 
 cat > /etc/salt/master.d/api.conf <<EOF
-rest_tornado:
+#rest_tornado:
+rest_cherrypy:
   port: 8000
   ssl_crt: /etc/pki/api/certs/server.crt
   ssl_key: /etc/pki/api/certs/server.key
-  debug: True
-  disable_ssl: False
-  websockets: True
+#  debug: True
+#  disable_ssl: False
+#  websockets: True
 EOF
 cat > /etc/salt/master.d/eauth.conf <<EOF
 external_auth:

@@ -12,39 +12,15 @@ import (
 
 // Job ...
 type Job struct {
-	ID         string   `json:"jid"`
-	Function   string   `json:"Function"`
-	Target     string   `json:"Target"`
-	User       string   `json:"User"`
-	StartTime  string   `json:"StartTime"`
-	TargetType string   `json:"Target-Type"`
-	Arguments  []string `json:"Arguments"`
-	Minions    []string `json:"Minions"`
-	Result     map[string]struct {
-		Return interface{} `json:"return"`
-	} `json:"Result"`
-}
-
-// Jobs ...
-func (c *ClientImpl) Jobs() (jobs map[string]*Job, err error) {
-	response := ReturnResponse{}
-	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
-		return code, rest.Get("/jobs").Receive(&response, &code)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	jobs = map[string]*Job{}
-	err = response.parse(&jobs)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range jobs {
-		v.ID = k
-	}
-
-	return jobs, nil
+	ID         string                 `json:"jid"`
+	Function   string                 `json:"Function"`
+	Target     string                 `json:"Target"`
+	User       string                 `json:"User"`
+	StartTime  string                 `json:"StartTime"`
+	TargetType string                 `json:"Target-Type"`
+	Arguments  []string               `json:"Arguments"`
+	Minions    []string               `json:"Minions"`
+	Result     map[string]interface{} `json:"Result"`
 }
 
 // Job ...
@@ -59,18 +35,23 @@ func (c *ClientImpl) Job(id string) (job *Job, err error) {
 		return nil, err
 	}
 	job = &Job{}
-	return job, response.parse(job)
+	return job, response.parse("info", job)
 }
 
 // Execute ...
-func (c *ClientImpl) Execute(target, fun string, arg []string) (id string, err error) {
-	response := ReturnResponse{}
+type Execute struct {
+	ID      string   `json:"jid"`
+	Minions []string `json:"minions"`
+}
 
+// Execute ...
+func (c *ClientImpl) Execute(target, fun string, arg interface{}) (execute *Execute, err error) {
+	response := ReturnResponse{}
 	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
 		return code, rest.ParamStruct(struct {
-			Fun    string   `json:"fun,omitempty"`
-			Arg    []string `json:"arg,omitempty"`
-			Target string   `json:"tgt,omitempty"`
+			Fun    string      `json:"fun,omitempty"`
+			Arg    interface{} `json:"arg,omitempty"`
+			Target string      `json:"tgt,omitempty"`
 		}{
 			Target: target,
 			Fun:    fun,
@@ -80,16 +61,8 @@ func (c *ClientImpl) Execute(target, fun string, arg []string) (id string, err e
 			Receive(&response, &code)
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	job := Job{}
-	return job.ID, response.parse(&job)
-}
-
-// Running ...
-func (j *Job) Running() bool {
-	if len(j.Minions) != len(j.Result) {
-		return false
-	}
-	return true
+	execute = &Execute{}
+	return execute, response.parse("return", execute)
 }

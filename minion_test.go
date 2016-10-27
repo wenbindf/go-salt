@@ -7,17 +7,18 @@ import (
 )
 
 func TestMinion(t *testing.T) {
-	client := NewClient(addr, username, password, true)
 	minions, err := client.Minions()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, minion := range minions {
-		fmt.Println(minion.ID)
 		m, err := client.Minion(minion.ID)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if m.ID != minion.ID {
+			t.Fatalf("id not match %s, %s", minion.ID, m.ID)
 		}
 		b, _ := json.Marshal(m)
 		fmt.Println(string(b))

@@ -20,10 +20,9 @@ import (
 // Client ...
 type Client interface {
 	Authenticate() error
-	RunCmd(target, fun string, arg []string, result interface{}) error
-	Jobs() (map[string]*Job, error)
+	RunCmd(target, fun string, arg interface{}, result interface{}) error
 	Job(id string) (*Job, error)
-	Execute(target, fun string, arg []string) (id string, er error)
+	Execute(target, fun string, arg interface{}) (execute *Execute, er error)
 	Minions() (map[string]*Minion, error)
 	Minion(id string) (*Minion, error)
 }
@@ -60,7 +59,7 @@ func (c *ClientImpl) RestClient() *gorest.RestClient {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: c.SSLSkipVerify,
 		},
-	}})
+	}}).JSON()
 }
 
 // RestClientTokenWrapper is a wrapper to authenticate if received 401 with a token.
@@ -98,33 +97,32 @@ func (c *ClientImpl) RestClientWithPassWord() *gorest.RestClient {
 }
 
 // ReturnResponse ...
-type ReturnResponse struct {
-	Return []interface{} `json:"return"`
-}
+type ReturnResponse map[string]interface{}
 
-func (r *ReturnResponse) parse(value interface{}) error {
+func (r ReturnResponse) parse(key string, value interface{}) error {
 	if r == nil {
 		return errors.New("nil pointer return response")
 	}
-	if len(r.Return) != 1 {
-		return fmt.Errorf("return array len is %d, this is expected to be 1", len(r.Return))
-	}
-	ret := r.Return[0]
+	part := r[key]
 
-	// string means error
-	v := reflect.ValueOf(ret)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+	item := reflect.ValueOf(part)
+	if item.Kind() == reflect.Slice {
+		if item.Len() != 1 {
+			return fmt.Errorf("return array len is %d, this is expected to be 1", item.Len())
+		}
+		item = item.Index(0)
 	}
-	if v.Kind() == reflect.String {
-		return errors.New(v.String())
+
+	if item.Kind() == reflect.String {
+		return errors.New(item.String())
 	}
 
 	// marshal interface
-	body, err := json.Marshal(ret)
+	body, err := json.Marshal(item.Interface())
 	if err != nil {
 		return err
 	}
+	// fmt.Println(string(body))
 
 	// if want string do not unmarshal
 	if val := reflect.ValueOf(value); val.Kind() == reflect.Ptr && val.Elem().Kind() == reflect.String {
@@ -156,29 +154,29 @@ func (c *ClientImpl) Authenticate() error {
 	if err != nil {
 		return err
 	}
-	return response.parse(&c.AuthToken)
+	return response.parse("return", &c.AuthToken)
 }
 
 // RunCmd ...
-func (c *ClientImpl) RunCmd(target, fun string, arg []string, result interface{}) (err error) {
+func (c *ClientImpl) RunCmd(target, fun string, arg interface{}, result interface{}) (err error) {
 	response := ReturnResponse{}
 	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
 		return code, rest.
 			ParamStruct(struct {
-				Client string   `json:"client,omitempty"`
-				Fun    string   `json:"fun,omitempty"`
-				Arg    []string `json:"arg,omitempty"`
-				Target string   `json:"tgt,omitempty"`
+				Client string      `json:"client,omitempty"`
+				Fun    string      `json:"fun,omitempty"`
+				Arg    interface{} `json:"arg,omitempty"`
+				Target string      `json:"tgt,omitempty"`
 			}{
 				Client: "local",
 				Target: target,
 				Fun:    fun,
 				Arg:    arg,
-			}).Post("/run").
+			}).Post("").
 			Receive(&response, &code)
 	})
 	if err != nil {
 		return err
 	}
-	return response.parse(result)
+	return response.parse("return", result)
 }

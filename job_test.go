@@ -6,25 +6,15 @@ import (
 	"testing"
 )
 
-func TestJobs(t *testing.T) {
-	client := NewClient(addr, username, password, true)
-	_, err := client.Jobs()
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestExecute(t *testing.T) {
-	client := NewClient(addr, username, password, true)
-
-	id, err := client.Execute("*", "test.ping", nil)
+	execute, err := client.Execute("*", "test.ping", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(id)
+	fmt.Println(execute)
 
 	// get job
-	job, err := client.Job(id)
+	job, err := client.Job(execute.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

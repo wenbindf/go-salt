@@ -51,7 +51,7 @@ func (c *ClientImpl) Minions() (minions map[string]*Minion, err error) {
 		return nil, err
 	}
 	minions = map[string]*Minion{}
-	return minions, response.parse(&minions)
+	return minions, response.parse("return", &minions)
 }
 
 // Minion ...
@@ -66,6 +66,7 @@ func (c *ClientImpl) Minion(id string) (minion *Minion, err error) {
 	if err != nil {
 		return nil, err
 	}
-	minion = &Minion{}
-	return minion, response.parse(minion)
+	minions := map[string]*Minion{}
+	err = response.parse("return", &minions)
+	return minions[id], err
 }
