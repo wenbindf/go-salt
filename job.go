@@ -5,8 +5,9 @@
 package salt
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/xuguruogu/gorest"
 )
 
 // Job ...
@@ -24,23 +25,21 @@ type Job struct {
 	} `json:"Result"`
 }
 
-// JobsResponse ...
-type JobsResponse struct {
-	Jobs []map[string]*Job `json:"return"`
-}
-
 // Jobs ...
 func (c *ClientImpl) Jobs() (jobs map[string]*Job, err error) {
-	response := JobsResponse{}
-	err = c.RestClientWithToken().Get("/jobs").Receive(&response)
+	response := ReturnResponse{}
+	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
+		return code, rest.Get("/jobs").Receive(&response, &code)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(response.Jobs) == 0 {
-		return nil, errors.New("response jobs array length is 0, this should never happen")
+	jobs = map[string]*Job{}
+	err = response.parse(&jobs)
+	if err != nil {
+		return nil, err
 	}
-	jobs = response.Jobs[0]
 	for k, v := range jobs {
 		v.ID = k
 	}
@@ -48,51 +47,43 @@ func (c *ClientImpl) Jobs() (jobs map[string]*Job, err error) {
 	return jobs, nil
 }
 
-// JobResponse ...
-type JobResponse struct {
-	Job []*Job `json:"return"`
-}
-
 // Job ...
-func (c *ClientImpl) Job(id string) (*Job, error) {
-	response := JobResponse{}
-	err := c.RestClientWithToken().Get(fmt.Sprintf("/jobs/%s", id)).Receive(&response)
+func (c *ClientImpl) Job(id string) (job *Job, err error) {
+	response := ReturnResponse{}
+	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
+		return code, rest.
+			Get(fmt.Sprintf("/jobs/%s", id)).
+			Receive(&response, &code)
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(response.Job) == 0 {
-		return nil, errors.New("response job array length is 0, this should never happen")
-	}
-	return response.Job[0], nil
-}
-
-// ExecutionResponse ...
-type ExecutionResponse struct {
-	Job []*Job `json:"return"`
+	job = &Job{}
+	return job, response.parse(job)
 }
 
 // Execute ...
-func (c *ClientImpl) Execute(target, fun string, arg []string) (id string, er error) {
-	response := &ExecutionResponse{}
-	err := c.RestClientWithToken().ParamStruct(struct {
-		Fun    string   `json:"fun,omitempty"`
-		Arg    []string `json:"arg,omitempty"`
-		Target string   `json:"tgt,omitempty"`
-	}{
-		Target: target,
-		Fun:    fun,
-		Arg:    arg,
-	}).Post("/minions").Receive(&response)
+func (c *ClientImpl) Execute(target, fun string, arg []string) (id string, err error) {
+	response := ReturnResponse{}
 
+	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
+		return code, rest.ParamStruct(struct {
+			Fun    string   `json:"fun,omitempty"`
+			Arg    []string `json:"arg,omitempty"`
+			Target string   `json:"tgt,omitempty"`
+		}{
+			Target: target,
+			Fun:    fun,
+			Arg:    arg,
+		}).
+			Post("/minions").
+			Receive(&response, &code)
+	})
 	if err != nil {
 		return "", err
 	}
-
-	if len(response.Job) == 0 {
-		return "", errors.New("response execute job array length is 0, this should never happen")
-	}
-
-	return response.Job[0].ID, nil
+	job := Job{}
+	return job.ID, response.parse(&job)
 }
 
 // Running ...

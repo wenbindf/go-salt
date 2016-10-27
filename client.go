@@ -6,8 +6,12 @@ package salt
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/xuguruogu/gorest"
@@ -30,7 +34,7 @@ type ClientImpl struct {
 	Username      string
 	Password      string
 	Eauth         string
-	AuthToken     *AuthToken
+	AuthToken     AuthToken
 	SSLSkipVerify bool
 }
 
@@ -59,17 +63,25 @@ func (c *ClientImpl) RestClient() *gorest.RestClient {
 	}})
 }
 
-// RestClientWithToken ...
-func (c *ClientImpl) RestClientWithToken() *gorest.RestClient {
-	if c.AuthToken == nil || int64(c.AuthToken.Expire) < time.Now().Unix() {
-		c.Authenticate()
+// RestClientTokenWrapper is a wrapper to authenticate if received 401 with a token.
+// this usually due to server side loss the token when restart.
+func (c *ClientImpl) RestClientTokenWrapper(callback func(rest *gorest.RestClient) (code int, err error)) error {
+	if int64(c.AuthToken.Expire) < time.Now().Unix() {
+		if err := c.Authenticate(); err != nil {
+			return err
+		}
 	}
-
-	if c.AuthToken == nil {
-		return c.RestClient()
+	code, err := callback(c.RestClient().Set("X-Auth-Token", c.AuthToken.Token))
+	if code == 401 {
+		if err := c.Authenticate(); err != nil {
+			return err
+		}
+		code, err = callback(c.RestClient().Set("X-Auth-Token", c.AuthToken.Token))
 	}
-
-	return c.RestClient().Set("X-Auth-Token", c.AuthToken.Token)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // RestClientWithPassWord ...
@@ -85,9 +97,45 @@ func (c *ClientImpl) RestClientWithPassWord() *gorest.RestClient {
 	})
 }
 
-// AuthResponse ...
-type AuthResponse struct {
-	Tokens []*AuthToken `json:"return"`
+// ReturnResponse ...
+type ReturnResponse struct {
+	Return []interface{} `json:"return"`
+}
+
+func (r *ReturnResponse) parse(value interface{}) error {
+	if r == nil {
+		return errors.New("nil pointer return response")
+	}
+	if len(r.Return) != 1 {
+		return fmt.Errorf("return array len is %d, this is expected to be 1", len(r.Return))
+	}
+	ret := r.Return[0]
+
+	// string means error
+	v := reflect.ValueOf(ret)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() == reflect.String {
+		return errors.New(v.String())
+	}
+
+	// marshal interface
+	body, err := json.Marshal(ret)
+	if err != nil {
+		return err
+	}
+
+	// if want string do not unmarshal
+	if val := reflect.ValueOf(value); val.Kind() == reflect.Ptr && val.Elem().Kind() == reflect.String {
+		val.Elem().SetString(string(body))
+		return nil
+	}
+
+	// unmarshal
+	d := json.NewDecoder(strings.NewReader(string(body)))
+	d.UseNumber()
+	return d.Decode(value)
 }
 
 // AuthToken ...
@@ -102,31 +150,35 @@ type AuthToken struct {
 
 // Authenticate ...
 func (c *ClientImpl) Authenticate() error {
-	response := AuthResponse{}
+	response := ReturnResponse{}
 	err := c.RestClientWithPassWord().Post("/login").Receive(&response)
 
 	if err != nil {
 		return err
 	}
-
-	if len(response.Tokens) == 0 {
-		return errors.New("response token array length is 0, this should never happen")
-	}
-	c.AuthToken = response.Tokens[0]
-	return nil
+	return response.parse(&c.AuthToken)
 }
 
 // RunCmd ...
-func (c *ClientImpl) RunCmd(target, fun string, arg []string, result interface{}) error {
-	return c.RestClientWithPassWord().ParamStruct(struct {
-		Client string   `json:"client,omitempty"`
-		Fun    string   `json:"fun,omitempty"`
-		Arg    []string `json:"arg,omitempty"`
-		Target string   `json:"tgt,omitempty"`
-	}{
-		Client: "local",
-		Target: target,
-		Fun:    fun,
-		Arg:    arg,
-	}).Post("/run").Receive(result)
+func (c *ClientImpl) RunCmd(target, fun string, arg []string, result interface{}) (err error) {
+	response := ReturnResponse{}
+	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
+		return code, rest.
+			ParamStruct(struct {
+				Client string   `json:"client,omitempty"`
+				Fun    string   `json:"fun,omitempty"`
+				Arg    []string `json:"arg,omitempty"`
+				Target string   `json:"tgt,omitempty"`
+			}{
+				Client: "local",
+				Target: target,
+				Fun:    fun,
+				Arg:    arg,
+			}).Post("/run").
+			Receive(&response, &code)
+	})
+	if err != nil {
+		return err
+	}
+	return response.parse(result)
 }

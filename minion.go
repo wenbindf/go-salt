@@ -5,8 +5,9 @@
 package salt
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/xuguruogu/gorest"
 )
 
 // MinionsResponse ...
@@ -39,29 +40,32 @@ type Minion struct {
 }
 
 // Minions ...
-func (c *ClientImpl) Minions() (map[string]*Minion, error) {
-	response := MinionsResponse{}
-	err := c.RestClientWithToken().Get("/minions").Receive(&response)
+func (c *ClientImpl) Minions() (minions map[string]*Minion, err error) {
+	response := ReturnResponse{}
+	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
+		return code, rest.
+			Get("/minions").
+			Receive(&response, &code)
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(response.Minions) == 0 {
-		return nil, errors.New("response minions array length is 0, this should never happen")
-	}
-	return response.Minions[0], nil
+	minions = map[string]*Minion{}
+	return minions, response.parse(&minions)
 }
 
 // Minion ...
-func (c *ClientImpl) Minion(id string) (*Minion, error) {
-	response := MinionsResponse{}
-	err := c.RestClientWithToken().
-		Get(fmt.Sprintf("/minions/%s", id)).
-		Receive(&response)
+func (c *ClientImpl) Minion(id string) (minion *Minion, err error) {
+	response := ReturnResponse{}
+
+	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
+		return code, rest.
+			Get(fmt.Sprintf("/minions/%s", id)).
+			Receive(&response, &code)
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(response.Minions) == 0 || response.Minions[0][id] == nil {
-		return nil, errors.New("No minions matched the target. No command was sent, no jid was assigned.")
-	}
-	return response.Minions[0][id], nil
+	minion = &Minion{}
+	return minion, response.parse(minion)
 }

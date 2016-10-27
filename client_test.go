@@ -24,12 +24,22 @@ func TestAuthenticate(t *testing.T) {
 	fmt.Println("expire at ", time.Unix(expire, 0).String())
 }
 
-func TestCmd(t *testing.T) {
+func TestPing(t *testing.T) {
 	client := NewClient(addr, username, password, true)
-	var s string
-	err := client.RunCmd("*", "test.ping", nil, &s)
+	ping := map[string]bool{}
+	err := client.RunCmd("*", "test.ping", nil, &ping)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Print(s)
+	fmt.Print(ping)
+}
+
+func TestEcho(t *testing.T) {
+	client := NewClient(addr, username, password, true)
+	echo := map[string]string{}
+	err := client.RunCmd("*", "test.echo", []string{"hello world"}, &echo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Print(echo)
 }

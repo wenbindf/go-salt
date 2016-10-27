@@ -12,8 +12,6 @@ func TestMinion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// b, _ := json.Marshal(minions)
-	// fmt.Println(string(b))
 
 	for _, minion := range minions {
 		fmt.Println(minion.ID)

@@ -4,6 +4,21 @@ modified version of [go-rest](https://github.com/r3labs/go-salt)
 
 detailed api reference see [rest_cherrypy](https://docs.saltstack.com/en/latest/ref/netapi/all/salt.netapi.rest_cherrypy.html)
 
+## feature
+
+- retry authenticate after receive 401
+- easy access to urls /jobs, /minions and /run
+
+## usage
+
+- run test.ping
+
+```
+client := NewClient(addr, username, password, true)
+ping := map[string]bool{}
+err := client.RunCmd("*", "test.ping", nil, &ping)
+fmt.Print(ping)
+```
 
 # vagrant usage
 
