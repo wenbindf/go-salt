@@ -59,7 +59,7 @@ func (c *ClientImpl) RestClient() *gorest.RestClient {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: c.SSLSkipVerify,
 		},
-	}}).JSON().Debug(false)
+	}}).JSON().Debug(true)
 }
 
 // RestClientTokenWrapper is a wrapper to authenticate if received 401 with a token.

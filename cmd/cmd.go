@@ -6,6 +6,17 @@ import salt "github.com/xuguruogu/go-salt"
 type Cmd interface {
 	//cmd
 	Run(cmd string, param ...*Param) (result map[string]string, err error)
+	Retcode(cmd string, param ...*Param) (result map[string]int, err error)
+	RunStderr(cmd string, param ...*Param) (result map[string]string, err error)
+	RunStdout(cmd string, param ...*Param) (result map[string]string, err error)
+	RunAll(cmd string, param ...*Param) (result map[string]*ExeResult, err error)
+	RunBg(cmd string, param ...*Param) (result map[string]map[string]int, err error)
+	RunChroot(root, cmd string, param ...*Param) (result map[string]*ExeResult, err error)
+	Powershell(cmd string, param ...*Param) (result map[string]string, err error)
+	Shell(cmd string, param ...*Param) (result map[string]string, err error)
+	//script
+	Script(source, args string, param ...*Param) (result map[string]string, err error)
+	ScriptRetcode(source, args string, param ...*Param) (result map[string]int, err error)
 	//exec
 	ExecCode(language, code string) (result map[string]string, err error)
 	ExecCodeAll(language, code string) (result map[string]*ExeResult, err error)
@@ -75,61 +86,135 @@ func (ci *Impl) Run(cmd string, param ...*Param) (result map[string]string, err 
 // Retcode Execute a shell command and return the command's return code.
 // at least 1 argument
 // - cmd.retcode
-func (ci *Impl) Retcode(cmd string, param ...*Param) {
-
+func (ci *Impl) Retcode(cmd string, param ...*Param) (result map[string]int, err error) {
+	kwarg := ExeParam{
+		Cmd: cmd,
+		Param: func() *Param {
+			if len(param) != 0 {
+				return param[0]
+			}
+			return nil
+		}(),
+	}
+	return result, ci.client.RunCmd(ci.target, "cmd.retcode", nil, kwarg, &result)
 }
 
 // RunStderr Execute a command and only return the standard error
 // at least 1 argument
 // - cmd.run_stderr
-func (i *Impl) RunStderr(cmd string, param ...*Param) {
-
+func (ci *Impl) RunStderr(cmd string, param ...*Param) (result map[string]string, err error) {
+	kwarg := ExeParam{
+		Cmd: cmd,
+		Param: func() *Param {
+			if len(param) != 0 {
+				return param[0]
+			}
+			return nil
+		}(),
+	}
+	return result, ci.client.RunCmd(ci.target, "cmd.run_stderr", nil, kwarg, &result)
 }
 
 // RunStdout Execute a command and only return the standard out
 // at least 1 argument
 // - cmd.run_stdout
-func (i *Impl) RunStdout(cmd string, param ...*Param) {
-
+func (ci *Impl) RunStdout(cmd string, param ...*Param) (result map[string]string, err error) {
+	kwarg := ExeParam{
+		Cmd: cmd,
+		Param: func() *Param {
+			if len(param) != 0 {
+				return param[0]
+			}
+			return nil
+		}(),
+	}
+	return result, ci.client.RunCmd(ci.target, "cmd.run_stdout", nil, kwarg, &result)
 }
 
 // RunAll Execute the passed command and return a dict of return data
 // at least 1 argument
 // - cmd.run_all
-func (i *Impl) RunAll(cmd string, param ...*Param) {
-
+func (ci *Impl) RunAll(cmd string, param ...*Param) (result map[string]*ExeResult, err error) {
+	kwarg := ExeParam{
+		Cmd: cmd,
+		Param: func() *Param {
+			if len(param) != 0 {
+				return param[0]
+			}
+			return nil
+		}(),
+	}
+	return result, ci.client.RunCmd(ci.target, "cmd.run_all", nil, kwarg, &result)
 }
 
 // RunBg Execute the passed command in the background and return it's PID
 // at least 1 argument
 // - cmd.run_bg
-func (i *Impl) RunBg(cmd string, param ...*Param) {
-
+func (ci *Impl) RunBg(cmd string, param ...*Param) (result map[string]map[string]int, err error) {
+	kwarg := ExeParam{
+		Cmd: cmd,
+		Param: func() *Param {
+			if len(param) != 0 {
+				return param[0]
+			}
+			return nil
+		}(),
+	}
+	return result, ci.client.RunCmd(ci.target, "cmd.run_bg", nil, kwarg, &result)
 }
 
 // ChrootExeParam ...
 type ChrootExeParam struct {
-	Param
+	*Param
+	Cmd  string `json:"cmd,omitempty"`  //param str cmd: The command to run
 	Root string `json:"root,omitempty"` //Path to the root of the jail to use, see chroot
 }
 
 // RunChroot wrapped within a chroot, with dev and proc mounted in the chroot
 // at least 2 argument
 // - cmd.run_chroot
-func (i *Impl) RunChroot(param *ChrootExeParam) {
-
+func (ci *Impl) RunChroot(root, cmd string, param ...*Param) (result map[string]*ExeResult, err error) {
+	kwarg := ChrootExeParam{
+		Root: root,
+		Cmd:  cmd,
+		Param: func() *Param {
+			if len(param) != 0 {
+				return param[0]
+			}
+			return nil
+		}(),
+	}
+	return result, ci.client.RunCmd(ci.target, "cmd.run_chroot", nil, kwarg, &result)
 }
 
 // Powershell Execute the passed PowerShell command and return the output as a string.
 // at least 1 argument
 // - cmd.powershell
-func (i *Impl) Powershell(cmd string, param ...*Param) {
-
+func (ci *Impl) Powershell(cmd string, param ...*Param) (result map[string]string, err error) {
+	kwarg := ExeParam{
+		Cmd: cmd,
+		Param: func() *Param {
+			if len(param) != 0 {
+				return param[0]
+			}
+			return nil
+		}(),
+	}
+	return result, ci.client.RunCmd(ci.target, "cmd.powershell", nil, kwarg, &result)
 }
 
 // Shell Execute the passed command and return the output as a string
 // at least 1 argument
 // - cmd.shell
-func (i *Impl) Shell(cmd string, param ...*Param) {
-
+func (ci *Impl) Shell(cmd string, param ...*Param) (result map[string]string, err error) {
+	kwarg := ExeParam{
+		Cmd: cmd,
+		Param: func() *Param {
+			if len(param) != 0 {
+				return param[0]
+			}
+			return nil
+		}(),
+	}
+	return result, ci.client.RunCmd(ci.target, "cmd.shell", nil, kwarg, &result)
 }
