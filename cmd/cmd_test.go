@@ -15,11 +15,15 @@ var (
 
 var (
 	target = "minion"
-	client = New(target, salt.NewClient(addr, username, password, true))
+	client = New(target, salt.NewClient(addr, username, password))
 )
 
+func init() {
+	client.SetKwarg(&Kwarg{Runas: "ubuntu"})
+}
+
 func TestRun(t *testing.T) {
-	r, err := client.Run("whoami", &Param{Runas: "ubuntu"})
+	r, err := client.Run("whoami")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +34,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestRetcode(t *testing.T) {
-	r, err := client.Retcode("whoami", &Param{Runas: "ubuntu"})
+	r, err := client.Retcode("whoami")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +45,7 @@ func TestRetcode(t *testing.T) {
 }
 
 func TestRunStderr(t *testing.T) {
-	r, err := client.RunStderr("whoami", &Param{Runas: "ubuntu"})
+	r, err := client.RunStderr("whoami")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +56,7 @@ func TestRunStderr(t *testing.T) {
 }
 
 func TestRunStdout(t *testing.T) {
-	r, err := client.RunStdout("whoami", &Param{Runas: "ubuntu"})
+	r, err := client.RunStdout("whoami")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +67,7 @@ func TestRunStdout(t *testing.T) {
 }
 
 func TestRunAll(t *testing.T) {
-	r, err := client.RunAll("whoami", &Param{Runas: "ubuntu"})
+	r, err := client.RunAll("whoami")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +78,7 @@ func TestRunAll(t *testing.T) {
 }
 
 func TestRunBg(t *testing.T) {
-	r, err := client.RunBg("ls -a", &Param{Runas: "ubuntu"})
+	r, err := client.RunBg("ls -a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +89,7 @@ func TestRunBg(t *testing.T) {
 }
 
 func TestRunChroot(t *testing.T) {
-	r, err := client.RunChroot("/home", "pwd", &Param{Runas: "ubuntu"})
+	r, err := client.RunChroot("/home", "pwd")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +98,7 @@ func TestRunChroot(t *testing.T) {
 }
 
 func TestPowershell(t *testing.T) {
-	r, err := client.Powershell("whoami", &Param{Runas: "ubuntu"})
+	r, err := client.Powershell("whoami")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +106,7 @@ func TestPowershell(t *testing.T) {
 }
 
 func TestShell(t *testing.T) {
-	r, err := client.Shell("whoami", &Param{Runas: "ubuntu"})
+	r, err := client.Shell("whoami")
 	if err != nil {
 		t.Fatal(err)
 	}

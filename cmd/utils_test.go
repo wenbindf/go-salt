@@ -27,17 +27,6 @@ func TestWhich(t *testing.T) {
 	fmt.Println(s)
 }
 
-func TestWhichBin(t *testing.T) {
-	s, err := client.WhichBin("cat")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(s[target]) == 0 {
-		t.Fatal("responese len is 0")
-	}
-	fmt.Println(s)
-}
-
 func TestHasExec(t *testing.T) {
 	s, err := client.HasExec("cat")
 	if err != nil {

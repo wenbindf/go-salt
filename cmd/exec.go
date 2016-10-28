@@ -1,7 +1,7 @@
 package cmd
 
-// ExeResult ...
-type ExeResult struct {
+// RunResult ...
+type RunResult struct {
 	Pid     int    `json:"pid"`
 	Retcode int    `json:"retcode"`
 	Stderr  string `json:"stderr"`
@@ -13,7 +13,7 @@ type ExeResult struct {
 // the code you wish to execute. All cmd artifacts (stdout, stderr, retcode, pid)
 // will be returned.
 // - cmd.exec_code_all
-func (ci *Impl) ExecCodeAll(language, code string) (result map[string]*ExeResult, err error) {
+func (ci *Impl) ExecCodeAll(language, code string) (result map[string]*RunResult, err error) {
 	return result, ci.client.RunCmd(ci.target, "cmd.exec_code_all", []interface{}{language, code}, nil, &result)
 }
 
