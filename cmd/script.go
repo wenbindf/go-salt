@@ -13,7 +13,7 @@ type ScriptExeParam struct {
 // The script will be executed directly, so it can be written in any available
 // programming language.
 // - cmd.script
-func (ci *Impl) Script(source, args string, param ...*Param) (result map[string]string, err error) {
+func (ci *Impl) Script(source, args string, param ...*Param) (result map[string]*ExeResult, err error) {
 	kwarg := ScriptExeParam{
 		Source: source,
 		Args:   args,

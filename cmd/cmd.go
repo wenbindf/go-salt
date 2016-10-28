@@ -15,7 +15,7 @@ type Cmd interface {
 	Powershell(cmd string, param ...*Param) (result map[string]string, err error)
 	Shell(cmd string, param ...*Param) (result map[string]string, err error)
 	//script
-	Script(source, args string, param ...*Param) (result map[string]string, err error)
+	Script(source, args string, param ...*Param) (result map[string]*ExeResult, err error)
 	ScriptRetcode(source, args string, param ...*Param) (result map[string]int, err error)
 	//exec
 	ExecCode(language, code string) (result map[string]string, err error)
