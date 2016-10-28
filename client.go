@@ -20,9 +20,9 @@ import (
 // Client ...
 type Client interface {
 	Authenticate() error
-	RunCmd(target, fun string, arg interface{}, result interface{}) error
+	RunCmd(target, fun string, arg []interface{}, kwarg interface{}, result interface{}) (err error)
 	Job(id string) (*Job, error)
-	Execute(target, fun string, arg interface{}) (execute *Execute, er error)
+	Execute(target, fun string, arg []interface{}, kwarg interface{}) (execute *Execute, err error)
 	Minions() (map[string]*Minion, error)
 	Minion(id string) (*Minion, error)
 }
@@ -59,7 +59,7 @@ func (c *ClientImpl) RestClient() *gorest.RestClient {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: c.SSLSkipVerify,
 		},
-	}}).JSON()
+	}}).JSON().Debug(false)
 }
 
 // RestClientTokenWrapper is a wrapper to authenticate if received 401 with a token.
@@ -158,20 +158,22 @@ func (c *ClientImpl) Authenticate() error {
 }
 
 // RunCmd ...
-func (c *ClientImpl) RunCmd(target, fun string, arg interface{}, result interface{}) (err error) {
+func (c *ClientImpl) RunCmd(target, fun string, arg []interface{}, kwarg interface{}, result interface{}) (err error) {
 	response := ReturnResponse{}
 	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
 		return code, rest.
 			ParamStruct(struct {
-				Client string      `json:"client,omitempty"`
-				Fun    string      `json:"fun,omitempty"`
-				Arg    interface{} `json:"arg,omitempty"`
-				Target string      `json:"tgt,omitempty"`
+				Client string        `json:"client,omitempty"`
+				Target string        `json:"tgt,omitempty"`
+				Fun    string        `json:"fun,omitempty"`
+				Arg    []interface{} `json:"arg,omitempty"`
+				Kwarg  interface{}   `json:"kwarg,omitempty"`
 			}{
 				Client: "local",
 				Target: target,
 				Fun:    fun,
 				Arg:    arg,
+				Kwarg:  kwarg,
 			}).Post("").
 			Receive(&response, &code)
 	})

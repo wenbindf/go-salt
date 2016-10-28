@@ -34,27 +34,48 @@ func TestAuthenticate(t *testing.T) {
 
 func TestEcho(t *testing.T) {
 	echo := map[string]string{}
-	err := client.RunCmd("*", "test.echo", []string{"hello world"}, &echo)
+	s := "hello world"
+	err := client.RunCmd("*", "test.echo", []interface{}{s}, nil, &echo)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(echo) == 0 {
+		t.Error("response num is 0")
+	}
+
+	for _, e := range echo {
+		if e != s {
+			t.Fatal("echo != s", e, s)
+		}
+	}
+
 	fmt.Print(echo)
 }
 
 func TestPing(t *testing.T) {
 	ping := map[string]bool{}
-	err := client.RunCmd("*", "test.ping", nil, &ping)
+	err := client.RunCmd("*", "test.ping", nil, nil, &ping)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if len(ping) == 0 {
+		t.Error("response num is 0")
+	}
+
 	fmt.Print(ping)
 }
 
 func TestArg(t *testing.T) {
 	arg := map[string]interface{}{}
-	err := client.RunCmd("*", "test.arg", []string{"hello world", "shell='dd'", "shell3='dd'"}, &arg)
+	err := client.RunCmd("*", "test.arg", []interface{}{"hello world"}, map[string]string{"shell": "sh"}, &arg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if len(arg) == 0 {
+		t.Error("response num is 0")
+	}
+
 	fmt.Print(arg)
 }

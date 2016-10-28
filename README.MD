@@ -68,4 +68,8 @@ curl -k https://192.168.88.101:8000/minions/minion -H "Accept: application/x-yam
 curl -k https://192.168.88.101:8000/jobs -H "Accept: application/x-yaml" -H "X-Auth-Token: b04cb118d4a0db2213b09db2f42c42ab"
 ```
 
+- shell via post json
 
+```
+curl -k -X POST https://192.168.88.101:8000 -H "Content-Type: application/json" -H "Accept: application/x-yaml" -H "X-Auth-Token: 54a76c07ad71270e0bafd375fb91ad8a2e837e91" --data '{"client":"local","fun":"cmd.run","tgt":"master","arg":["whoami"],"kwarg":{"runas":"ubuntu"}}'
+```

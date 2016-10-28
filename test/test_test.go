@@ -13,20 +13,30 @@ var (
 	password = "salt"
 )
 
+var (
+	target = "minion"
+	client = New(target, salt.NewClient(addr, username, password, true))
+)
+
 func TestPing(t *testing.T) {
-	test := New(salt.NewClient(addr, username, password, true))
-	ping, err := test.Ping("*")
+	ping, err := client.Ping()
 	if err != nil {
 		t.Fatal(err)
+	}
+	if ping[target] != true {
+		t.Errorf("ping %s failed", target)
 	}
 	fmt.Print(ping)
 }
 
 func TestEcho(t *testing.T) {
-	test := New(salt.NewClient(addr, username, password, true))
-	echo, err := test.Echo("*", "Hello World")
+	s := "Hello World"
+	echo, err := client.Echo(s)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if echo[target] != s {
+		t.Errorf("echo failed, expect %s, get %s", s, echo[target])
 	}
 	fmt.Print(echo)
 }

@@ -4,27 +4,29 @@ import salt "github.com/xuguruogu/go-salt"
 
 // Test ...
 type Test interface {
-	Ping(target string) (ping map[string]bool, err error)
-	Echo(target string, param string) (echo map[string]string, err error)
+	Ping() (ping map[string]bool, err error)
+	Echo(param string) (echo map[string]string, err error)
 }
 
-type TestImpl struct {
+// Impl ...
+type Impl struct {
 	client salt.Client
+	target string
 }
 
 // New ...
-func New(client salt.Client) Test {
-	return &TestImpl{client: client}
+func New(target string, client salt.Client) Test {
+	return &Impl{client: client, target: target}
 }
 
 // Ping ...
-func (ti *TestImpl) Ping(target string) (ping map[string]bool, err error) {
+func (ti *Impl) Ping() (ping map[string]bool, err error) {
 	ping = map[string]bool{}
-	return ping, ti.client.RunCmd(target, "test.ping", nil, &ping)
+	return ping, ti.client.RunCmd(ti.target, "test.ping", nil, nil, &ping)
 }
 
 // Echo ...
-func (ti *TestImpl) Echo(target string, param string) (echo map[string]string, err error) {
+func (ti *Impl) Echo(param string) (echo map[string]string, err error) {
 	echo = map[string]string{}
-	return echo, ti.client.RunCmd(target, "test.echo", []string{param}, &echo)
+	return echo, ti.client.RunCmd(ti.target, "test.echo", []interface{}{param}, nil, &echo)
 }

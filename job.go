@@ -45,17 +45,19 @@ type Execute struct {
 }
 
 // Execute ...
-func (c *ClientImpl) Execute(target, fun string, arg interface{}) (execute *Execute, err error) {
+func (c *ClientImpl) Execute(target, fun string, arg []interface{}, kwarg interface{}) (execute *Execute, err error) {
 	response := ReturnResponse{}
 	err = c.RestClientTokenWrapper(func(rest *gorest.RestClient) (code int, err error) {
 		return code, rest.ParamStruct(struct {
-			Fun    string      `json:"fun,omitempty"`
-			Arg    interface{} `json:"arg,omitempty"`
-			Target string      `json:"tgt,omitempty"`
+			Target string        `json:"tgt,omitempty"`
+			Fun    string        `json:"fun,omitempty"`
+			Arg    []interface{} `json:"arg,omitempty"`
+			Kwarg  interface{}   `json:"kwarg,omitempty"`
 		}{
 			Target: target,
 			Fun:    fun,
 			Arg:    arg,
+			Kwarg:  kwarg,
 		}).
 			Post("/minions").
 			Receive(&response, &code)

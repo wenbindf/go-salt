@@ -7,7 +7,7 @@ import (
 )
 
 func TestExecute(t *testing.T) {
-	execute, err := client.Execute("*", "test.ping", nil)
+	execute, err := client.Execute("*", "test.ping", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,6 +18,10 @@ func TestExecute(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if job.ID != execute.ID {
+		t.Fatal("job.ID!=execute.ID", job.ID, execute.ID)
+	}
+
 	b, _ := json.Marshal(job)
 	fmt.Println(string(b))
 }
