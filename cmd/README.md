@@ -18,7 +18,7 @@ addr     = "192.168.88.101:8000"
 username = "salt"
 password = "salt"
 target = "minion"
-client = salt.New(target, salt.NewClient(addr, username, password, true))
+client = salt.New(target, salt.NewClient(addr, username, password))
 r, err := client.Run("whoami", &Param{Runas: "ubuntu"})
 ```
 

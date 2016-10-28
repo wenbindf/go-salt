@@ -19,7 +19,7 @@ detailed api reference see [rest_cherrypy](https://docs.saltstack.com/en/latest/
 - run test.ping
 
 ```
-client := NewClient(addr, username, password, true)
+client := NewClient(addr, username, password)
 ping := map[string]bool{}
 err := client.RunCmd("*", "test.ping", nil, &ping)
 fmt.Print(ping)
