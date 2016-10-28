@@ -25,6 +25,11 @@ type Client interface {
 	Execute(target, fun string, arg []interface{}, kwarg interface{}) (execute *Execute, err error)
 	Minions() (map[string]*Minion, error)
 	Minion(id string) (*Minion, error)
+	// param
+	SetDebug(debug bool)        //default false
+	SetSSLSkipVerify(skip bool) //default true
+	SetClient(client string)    //default local
+	SetEauth(eauth string)      //default pam
 }
 
 // ClientImpl ...
@@ -35,22 +40,41 @@ type ClientImpl struct {
 	Eauth         string
 	AuthToken     AuthToken
 	SSLSkipVerify bool
+	Debug         bool
+	Client        string
 }
 
 // NewClient ...
-func NewClient(addr, username, password string, SSLSkipVerify bool, eauth ...string) Client {
+func NewClient(addr, username, password string) Client {
 	return &ClientImpl{
-		Addr:     addr,
-		Username: username,
-		Password: password,
-		Eauth: func() string {
-			if len(eauth) == 0 {
-				return "pam"
-			}
-			return eauth[0]
-		}(),
-		SSLSkipVerify: SSLSkipVerify,
+		Addr:          addr,
+		Username:      username,
+		Password:      password,
+		Eauth:         "pam",
+		SSLSkipVerify: true,
+		Client:        "local",
+		Debug:         false,
 	}
+}
+
+// SetDebug ...
+func (c *ClientImpl) SetDebug(debug bool) {
+	c.Debug = debug
+}
+
+// SetSSLSkipVerify ...
+func (c *ClientImpl) SetSSLSkipVerify(skip bool) {
+	c.SSLSkipVerify = skip
+}
+
+// SetClient ...
+func (c *ClientImpl) SetClient(client string) {
+	c.Client = client
+}
+
+// SetEauth ...
+func (c *ClientImpl) SetEauth(eauth string) {
+	c.Eauth = eauth
 }
 
 // RestClient ...
@@ -59,7 +83,7 @@ func (c *ClientImpl) RestClient() *gorest.RestClient {
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: c.SSLSkipVerify,
 		},
-	}}).JSON().Debug(true)
+	}}).JSON().Debug(c.Debug)
 }
 
 // RestClientTokenWrapper is a wrapper to authenticate if received 401 with a token.
@@ -169,7 +193,7 @@ func (c *ClientImpl) RunCmd(target, fun string, arg []interface{}, kwarg interfa
 				Arg    []interface{} `json:"arg,omitempty"`
 				Kwarg  interface{}   `json:"kwarg,omitempty"`
 			}{
-				Client: "local",
+				Client: c.Client,
 				Target: target,
 				Fun:    fun,
 				Arg:    arg,

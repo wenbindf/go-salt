@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var client = NewClient(addr, username, password, true)
+var client = NewClient(addr, username, password)
 
 var (
 	addr     = "192.168.88.101:8000"

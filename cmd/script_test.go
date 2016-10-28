@@ -7,7 +7,7 @@ import (
 
 func TestScript(t *testing.T) {
 	s := "Hello World"
-	r, err := client.Script("https://raw.githubusercontent.com/xuguruogu/go-salt/master/echo.sh", s, &Param{Runas: "ubuntu"})
+	r, err := client.Script("https://raw.githubusercontent.com/xuguruogu/go-salt/master/echo.sh", s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -19,7 +19,7 @@ func TestScript(t *testing.T) {
 
 func TestScriptRetcode(t *testing.T) {
 	s := "Hello World"
-	r, err := client.ScriptRetcode("https://raw.githubusercontent.com/xuguruogu/go-salt/master/echo.sh", s, &Param{Runas: "ubuntu"})
+	r, err := client.ScriptRetcode("https://raw.githubusercontent.com/xuguruogu/go-salt/master/echo.sh", s)
 	if err != nil {
 		t.Fatal(err)
 	}

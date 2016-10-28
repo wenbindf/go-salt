@@ -15,9 +15,9 @@ func (ci *Impl) Which(cmd string) (result map[string]string, err error) {
 
 // WhichBin Returns the first command found in a list of commands
 // - cmd.which_bin
-func (ci *Impl) WhichBin(cmds string) (result map[string]string, err error) {
-	return result, ci.client.RunCmd(ci.target, "cmd.which_bin", []interface{}{cmds}, nil, &result)
-}
+// func (ci *Impl) WhichBin(cmds string) (result map[string]string, err error) {
+// 	return result, ci.client.RunCmd(ci.target, "cmd.which_bin", []interface{}{cmds}, nil, &result)
+// }
 
 // HasExec Returns true if the executable is available on the minion, false otherwise
 // - cmd.has_exec

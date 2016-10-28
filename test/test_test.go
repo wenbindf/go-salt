@@ -15,7 +15,7 @@ var (
 
 var (
 	target = "minion"
-	client = New(target, salt.NewClient(addr, username, password, true))
+	client = New(target, salt.NewClient(addr, username, password))
 )
 
 func TestPing(t *testing.T) {

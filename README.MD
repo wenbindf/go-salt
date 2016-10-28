@@ -1,7 +1,6 @@
 # go-rest
 
-modified version of [go-rest](https://github.com/r3labs/go-salt)
-
+modified version of [go-salt](https://github.com/r3labs/go-salt)
 detailed api reference see [rest_cherrypy](https://docs.saltstack.com/en/latest/ref/netapi/all/salt.netapi.rest_cherrypy.html)
 
 ## feature
@@ -9,6 +8,11 @@ detailed api reference see [rest_cherrypy](https://docs.saltstack.com/en/latest/
 - retry authenticate after receive 401
 - easy access to urls /jobs, /minions and /run
 - easy to parse run result
+
+## module list
+
+- [cmd readme](cmd/README.md)
+- [test readme](test/README.md)
 
 ## usage
 
