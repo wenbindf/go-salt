@@ -8,11 +8,19 @@ import (
 
 var client = NewClient(addr, username, password)
 
+//vagrant
 var (
 	addr     = "192.168.88.101:8000"
 	username = "salt"
 	password = "salt"
 )
+
+//vm
+// var (
+// 	addr     = "10.94.104.84:8000"
+// 	username = "salt"
+// 	password = "salt"
+// )
 
 // var (
 // 	addr     = "10.94.99.95:8000"
