@@ -50,6 +50,24 @@ master: 192.168.88.101
 EOF
 echo master > /etc/salt/minion_id
 
+#rsync
+cat > /etc/rsyncd.conf <<EOF
+uid=root
+gid=root
+max connection = 300
+pid file = /var/run/rsyncd.pid
+lock file = /var/run/rsyncd.lock
+log file =/var/log/rsyncd.log
+
+[ubuntu]
+	comment = data ddb/stat
+	path = /home/ubuntu/
+	hosts allow = 100.0.0.0/8 10.0.0.0/8 127.0.0.1/16 192.168.0.0/16
+	read only = yes
+	timeout = 600
+EOF
+
+/usr/bin/rsync --daemon --config=/etc/rsyncd.conf
 systemctl restart salt-minion
 systemctl restart salt-master
 systemctl restart salt-api
