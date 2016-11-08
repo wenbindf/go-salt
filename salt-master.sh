@@ -60,7 +60,7 @@ lock file = /var/run/rsyncd.lock
 log file =/var/log/rsyncd.log
 
 [ubuntu]
-	comment = data ddb/stat
+	comment = ubuntu home
 	path = /home/ubuntu/
 	hosts allow = 100.0.0.0/8 10.0.0.0/8 127.0.0.1/16 192.168.0.0/16
 	read only = yes
